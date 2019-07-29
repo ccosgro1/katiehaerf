@@ -147,6 +147,8 @@ fishmod2=lme(GSF_L~GF_C, random=~1|DATE/POND, data=SHVACH_NEW)
 anova(fishmod2)
 #When we run the new model, GSF length is  significant, so number of GF signficantly impacts the length of GSF.
 
+
+
 ```
 
 
