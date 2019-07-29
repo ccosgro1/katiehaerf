@@ -1,0 +1,153 @@
+---
+title: "QMB_PROJECT2"
+author: "Katie shvach"
+date: "April 10, 2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+
+## Summary Statistics
+
+```{r}
+SHVACH_NEW <- read.csv("C:/Users/Colleen/OneDrive/Documents/School/Research/Labmate Revisions/Katie Shvach/SHVACH_NEW.csv", header=TRUE)
+View(SHVACH_NEW)
+str(SHVACH_NEW)
+summary(SHVACH_NEW)
+```
+
+##Exploratory Plots
+```{r}
+plot(GF_C~GSF_C,data=SHVACH_NEW)
+plot(GSF_L~GSF_C,data=SHVACH_NEW)
+plot(GF_L~GF_C,data=SHVACH_NEW)
+plot(GF_L~GSF_L,data=SHVACH_NEW)
+boxplot(SHVACH_NEW)
+
+```
+There are many outliers in the data for GSF and GF.
+##Exploratory Plots
+```{r}
+hist(SHVACH_NEW$GF_C)
+hist(SHVACH_NEW$GSF_C)
+hist(SHVACH_NEW$GF_L)
+```
+
+```{r}
+boxplot(SHVACH_NEW)
+```
+
+
+```{r}
+View(SHVACH_NEW)
+str(SHVACH_NEW)
+model <- lm(GF_LS~GSF_C*HER_P+DATE,data = SHVACH_NEW)
+TL <-lm(GF_C~GSF_C*HER_P,DATE, data = SHVACH_NEW)
+summary(TL)
+summary(model)
+
+```
+Assumptions:
+Q-Q: It looks okay towards the middle of the graph but not towards the ends. 
+Histogram: There is an odd right tail and a slight left tail. 
+Residuals: There is odd stacking of the residuals. 
+Statistical Conclusion: The p-value for green sunfish count is 0.189 and heron presence is 0.89.  We would fail to reject both of the null hypotheses.
+General Conclusion: Fish length and heron presence do not affect the tadpole length.
+
+
+Intraspecific Interactions
+```{r}
+INTGSFD <- lm(GSF_L~GSF_C+ DATE,data = SHVACH_NEW)
+summary(INTGSFD)
+hist(resid(INTGSFD))
+plot(INTGSFD,which=2)
+plot(INTGSFD,which=1)
+INTGFD <- lm(GF_L~GF_C+ DATE,data = SHVACH_NEW)
+summary(INTGFD)
+hist(resid(INTGFD))
+plot(INTGFD,which=2)
+plot(INTGFD,which=1)
+```
+Assumptions INTGSFD:
+Q-Q: The points do not fit the line well. 
+Histogram:This is the worst histogram that I have ever seen.  There are left and right tails and it could be multimodal. 
+Residuals: There are some concerning outliers 
+Statistical Conclusion: The p-value is 0.227. We would fail to reject the null hypothesis. 
+General Conclusion: There is no relationship between the length and abundance of green sunfish.  This would mean that there is no competition for resources.
+
+
+Assumptions INTGFD:
+Q-Q: The points do not fit the line well 
+Histogram:  This histogram is very irregular.
+Residuals: The points dont hug the line
+Statistical Conclusion: The p-value is 6.74e-09. We would fail to reject the null hypothesis. 
+General Conclusion: The count of the green frogs affects the length of the green frogs.  
+
+Length comparison - are bigger fish eating bigger tadpoles?
+```{r}
+LENGTH <- lm(GF_L~GSF_L+ DATE,data = SHVACH_NEW)
+summary(LENGTH)
+hist(resid(LENGTH))
+plot(LENGTH,which=2)
+plot(LENGTH,which=1)
+```
+Assumptions:
+Q-Q: The points do not meet the line.
+Histogram:  The histogram is irregluar. 
+Residuals: The points are well spread. 
+Statistical Conclusion: The p value is 0.023. We would reject the null hypothesis. 
+General Conclusion: There is an effect on the green frogs from the sunfish due to potential feeding pressure. 
+
+Feeding Ability of sunfish based on length of tadpole
+```{r}
+SHVACH_NEW <- read.csv("E:/QMB Labs/SHVACH_NEW.csv", header=TRUE)
+View(SHVACH_NEW)
+str(SHVACH_NEW)
+summary(SHVACH_NEW)
+SHVACH_NEW$GFC <-sqrt(SHVACH_NEW$GF_C)
+SHVACH_NEW$GSFL <-sqrt(SHVACH_NEW$GSF_L)
+FEED <- lm(SHVACH_NEW$GFC~SHVACH_NEW$GSFL+ DATE,data = SHVACH_NEW)
+summary(FEED)
+hist(resid(FEED))
+plot(FEED,which=2)
+plot(FEED,which=1)
+```
+Assumptions:
+Q-Q: The points fit to the line.
+Histogram:  There is a very long right tail.
+Residuals: The points fit the line well. 
+Statistical Conclusion: The p-value is 5.78e-5 we would reject the null hypothesis. 
+General Conclusion: The feeding ability of the sunfish affects the tadpole length.
+
+
+
+```{r linear mixed model}
+#goal: to determine which variables best explain tadpole length and fish length
+library(lme4)
+library(nlme)
+colnames(SHVACH_NEW)
+
+#lme() function is a linear mixed effect model. the random effect has date nested within pond because you're sampling the same ponds on different days
+frogmod=lme(GF_L*GF_C~GSF_C*GSF_L, random=~1|DATE/POND, data=SHVACH_NEW)
+anova(frogmod)
+plot(frogmod)
+#It appears that GF Length was significantly affected by the presence of GSF so let's remove count.Count was marginally significant, but you should be wary of "marginally" significant results with this statistical test, so let's shoot for the more conservative direction.
+frogmod2=lme(GF_C~GSF_C*GSF_L, random=~1|DATE/POND, data=SHVACH_NEW)
+anova(frogmod2)
+#So, based on this new model, it appears that GF Length is significantly affected b GSF length, again, marginally by the GSF count. THere is no interaction effect of Length by count (so more larger fish didn't have any more effect than fewer larger fish.)
+
+#same type of model, but with fish legnth and count as the DV and frogs as the IV.
+fishmod=lme(GSF_L*GSF_C~GF_C*GF_L, random=~1|DATE/POND, data=SHVACH_NEW)
+anova(fishmod)
+plot(fishmod)
+#here it looks like fish count is affected by GF count, so let'spull out GF count.
+fishmod2=lme(GSF_L~GF_C, random=~1|DATE/POND, data=SHVACH_NEW)
+anova(fishmod2)
+#When we run the new model, GSF length is  significant, so number of GF signficantly impacts the length of GSF.
+
+```
+
+
+
